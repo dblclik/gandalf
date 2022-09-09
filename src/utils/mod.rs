@@ -1,5 +1,6 @@
 pub mod hex;
 // pub mod pem;
+pub mod bit_ops;
 pub mod xcode;
 
 #[derive(Debug)]
@@ -73,7 +74,9 @@ pub fn get_random(bytes_len: usize) -> RandBytes {
 
 #[cfg(test)]
 mod tests {
-    use super::{hex::decode_hex, xcode::urlsafe_base64_encode, *};
+    use crate::utils::bit_ops::xor_bytes;
+
+    use super::{hex::decode_hex, hex::encode_hex, xcode::urlsafe_base64_encode, *};
     #[test]
     fn test_rand32() {
         let result = get_random_32();
@@ -99,5 +102,16 @@ mod tests {
         let hex_bytes = decode_hex(hex_str).unwrap();
         let b64_result = urlsafe_base64_encode(&hex_bytes);
         assert_eq!(target_b64.to_owned(), b64_result);
+    }
+
+    #[test]
+    fn test_byte_array_xor() {
+        let hex_str_a = "1c0111001f010100061a024b53535009181c";
+        let hex_str_b = "686974207468652062756c6c277320657965";
+        let target_hex = "746865206b696420646f6e277420706c6179";
+        let hex_bytes_a = decode_hex(hex_str_a).unwrap();
+        let hex_bytes_b = decode_hex(hex_str_b).unwrap();
+        let hex_result = encode_hex(&xor_bytes(hex_bytes_a, hex_bytes_b).unwrap());
+        assert_eq!(target_hex.to_owned(), hex_result);
     }
 }
