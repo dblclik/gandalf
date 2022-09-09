@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 pub mod hex;
 // pub mod pem;
 pub mod bit_ops;
