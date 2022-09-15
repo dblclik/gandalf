@@ -115,4 +115,7 @@ mod tests {
         let hex_result = encode_hex(&xor_bytes(hex_bytes_a, hex_bytes_b).unwrap());
         assert_eq!(target_hex.to_owned(), hex_result);
     }
+
+    #[test]
+    fn test_byte_freq() {}
 }
