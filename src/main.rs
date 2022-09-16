@@ -1,8 +1,10 @@
+mod cipher;
 mod cryptanalysis;
 mod io;
 mod utils;
 
 use clap::{Args, Parser, Subcommand};
+use std::option;
 use std::path::Path;
 use std::str::FromStr;
 
@@ -32,6 +34,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Turns a string into a hex string
+    Hexlify(InputString),
     /// Converts a hex string into URL-safe b64
     HexToB64(HexString),
     /// Takes in two hex strings of equal length and computes the XOR of them
@@ -40,6 +44,14 @@ enum Commands {
     SingleByteXorDecrypt(HexString),
     /// Command to attack a file of ciphertexts
     AttackFile(FileOptions),
+    /// Encrypts a file with optionally repeating XOR
+    XorEncrypt(XorEncryptOptions),
+}
+
+#[derive(Args, Clone, Debug)]
+struct InputString {
+    #[clap(value_parser)]
+    string: Option<String>,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -56,11 +68,11 @@ struct XorHexStrings {
 }
 
 #[derive(Args, Clone, Debug)]
-struct XorDecryptOptions {
+struct XorEncryptOptions {
     #[clap(value_parser)]
-    hex_string: Option<String>,
-    depth: Option<u8>,
-    uppercase: Option<bool>,
+    input_path: Option<String>,
+    private_key: Option<String>,
+    repeating: Option<bool>,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -77,6 +89,12 @@ fn main() {
     // You can check for the existence of subcommands, and if found use their
     // matches just as you would the top level cmd
     match &cli.command {
+        Commands::Hexlify(input) => {
+            println!(
+                "{}",
+                utils::hex::encode_hex(input.to_owned().string.unwrap().as_bytes())
+            )
+        }
         Commands::HexToB64(input_string) => {
             let hex_input = input_string.to_owned().hex_string.unwrap();
             let hex_bytes = utils::hex::decode_hex(&hex_input).unwrap();
@@ -138,6 +156,18 @@ fn main() {
                     println!("  - Result Plaintext: {}", max_attack_score.plaintext);
                 }
             }
+        }
+        Commands::XorEncrypt(encrypt_options) => {
+            let options = encrypt_options.to_owned();
+            let file_contents = io::read_file(Path::new(&options.input_path.unwrap()));
+
+            let xor_cipher = cipher::xor::XorCipher {
+                private_key: &utils::hex::decode_hex(options.private_key.unwrap().as_str())
+                    .unwrap(),
+                repeating: options.repeating.unwrap(),
+            };
+            let ciphertext = xor_cipher.encrypt(&file_contents);
+            println!("{}", utils::hex::encode_hex(&ciphertext));
         }
     }
 }

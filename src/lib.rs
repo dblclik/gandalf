@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+pub mod cipher;
 pub mod cryptanalysis;
 pub mod io;
 pub mod utils;
