@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 pub mod cryptanalysis;
+pub mod io;
 pub mod utils;
 
 #[cfg(test)]

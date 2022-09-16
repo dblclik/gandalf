@@ -1,7 +1,26 @@
 mod cryptanalysis;
+mod io;
 mod utils;
 
 use clap::{Args, Parser, Subcommand};
+use std::path::Path;
+use std::str::FromStr;
+
+#[derive(Debug, PartialEq)]
+enum AttackOptions {
+    Xor,
+}
+
+impl FromStr for AttackOptions {
+    type Err = ();
+
+    fn from_str(input: &str) -> Result<AttackOptions, Self::Err> {
+        match input.to_lowercase().as_str() {
+            "xor" => Ok(AttackOptions::Xor),
+            _ => Err(()),
+        }
+    }
+}
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -19,6 +38,8 @@ enum Commands {
     XorHexStrings(XorHexStrings),
     /// Takes in a hex string and shows the result of attempting single-byte xor decrypt
     SingleByteXorDecrypt(HexString),
+    /// Command to attack a file of ciphertexts
+    AttackFile(FileOptions),
 }
 
 #[derive(Args, Clone, Debug)]
@@ -40,6 +61,14 @@ struct XorDecryptOptions {
     hex_string: Option<String>,
     depth: Option<u8>,
     uppercase: Option<bool>,
+}
+
+#[derive(Args, Clone, Debug)]
+struct FileOptions {
+    #[clap(value_parser)]
+    input_path: Option<String>,
+    separator: Option<u8>,
+    attack_scheme: Option<String>,
 }
 
 fn main() {
@@ -73,6 +102,42 @@ fn main() {
             println!("  - Likely XOR Byte: {}", results.xor_byte);
             println!("  - Result Score: {}", results.score);
             println!("  - Result Plaintext: {}", results.plaintext);
+        }
+        Commands::AttackFile(file_input) => {
+            let split_file_contents = io::split_file(
+                Path::new(&file_input.to_owned().input_path.unwrap()),
+                file_input.to_owned().separator.unwrap(),
+            );
+            println!("Retrieved {} results from file", split_file_contents.len());
+            let attack = match AttackOptions::from_str(
+                file_input.to_owned().attack_scheme.unwrap().as_str(),
+            ) {
+                Ok(x) => x,
+                Err(_) => panic!(
+                    "Attack option {} has not been implemented!",
+                    file_input.to_owned().attack_scheme.unwrap()
+                ),
+            };
+            match attack {
+                AttackOptions::Xor => {
+                    let mut max_attack_score = cryptanalysis::XorAnalysisOutput::default();
+                    let mut max_score = 0;
+                    for vec in split_file_contents {
+                        let hex_bytes =
+                            utils::hex::decode_hex(String::from_utf8(vec).unwrap().as_str())
+                                .unwrap();
+                        let results = cryptanalysis::get_likely_xor_byte(&hex_bytes);
+                        if results.score > max_score {
+                            max_score = results.score;
+                            max_attack_score = results.clone()
+                        }
+                    }
+                    println!("XOR Analysis Result is:");
+                    println!("  - Likely XOR Byte: {}", max_attack_score.xor_byte);
+                    println!("  - Result Score: {}", max_attack_score.score);
+                    println!("  - Result Plaintext: {}", max_attack_score.plaintext);
+                }
+            }
         }
     }
 }

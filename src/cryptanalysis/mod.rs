@@ -4,6 +4,7 @@ use crate::utils::bit_ops;
 
 pub mod frequency;
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct XorAnalysisOutput {
     pub xor_byte: u8,
     pub plaintext: String,
@@ -32,7 +33,7 @@ pub fn get_likely_xor_byte(input_bytes: &[u8]) -> XorAnalysisOutput {
             max_score = original_bytes_score;
             max_result = XorAnalysisOutput {
                 xor_byte: i.clone(),
-                plaintext: String::from_utf8(original_bytes).unwrap(),
+                plaintext: String::from_utf8(original_bytes).unwrap_or(String::new()),
                 score: max_score.clone(),
             }
         }
