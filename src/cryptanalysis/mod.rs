@@ -1,27 +1,50 @@
+#![allow(dead_code)]
 use crate::utils::bit_ops;
+// use std::collections::HashMap;
 
 pub mod frequency;
 
-pub fn get_likely_xor_byte(input_bytes: &[u8], depth: usize, upper: bool) -> Vec<String> {
-    let frequencies = frequency::freq_score(input_bytes);
-    let mut count_vec: Vec<_> = frequencies.iter().collect();
-    count_vec.sort_by(|a, b| a.1.cmp(b.1).reverse());
-    let mut result_vecs: Vec<String> = vec![];
-    for i in 0usize..depth {
-        let original_char: &u8;
-        if upper {
-            original_char = &frequency::LETTER_FREQUENCY_ORDER_UPPER[i];
-        } else {
-            original_char = &frequency::LETTER_FREQUENCY_ORDER_LOWER[i];
-        }
-        let xor_char = count_vec[0].0 ^ original_char;
-
-        let xor_array = vec![xor_char; input_bytes.len()];
-        let original_bytes = bit_ops::xor_bytes(xor_array, input_bytes.to_vec()).unwrap();
-        result_vecs.push(String::from_utf8(original_bytes).unwrap());
-    }
-    result_vecs
+pub struct XorAnalysisOutput {
+    pub xor_byte: u8,
+    pub plaintext: String,
+    pub score: usize,
 }
+
+impl Default for XorAnalysisOutput {
+    fn default() -> Self {
+        return XorAnalysisOutput {
+            xor_byte: 0u8,
+            plaintext: String::default(),
+            score: 0,
+        };
+    }
+}
+
+// pub fn score
+pub fn get_likely_xor_byte(input_bytes: &[u8]) -> XorAnalysisOutput {
+    let mut max_result: XorAnalysisOutput = XorAnalysisOutput::default();
+    let mut max_score: usize = 0;
+    for i in 0..255u8 {
+        let xor_array = vec![i; input_bytes.len()];
+        let original_bytes = bit_ops::xor_bytes(xor_array, input_bytes.to_vec()).unwrap();
+        let original_bytes_score = frequency::string_score(&original_bytes);
+        if original_bytes_score > max_score {
+            max_score = original_bytes_score;
+            max_result = XorAnalysisOutput {
+                xor_byte: i.clone(),
+                plaintext: String::from_utf8(original_bytes).unwrap(),
+                score: max_score.clone(),
+            }
+        }
+    }
+    max_result
+}
+
+// handy code for converting a hashmap of counts into a reverse sorted vec
+// let frequencies = frequency::freq_score(input_bytes);
+// let mut count_vec: Vec<_> = frequencies.iter().collect();
+// count_vec.sort_by(|a, b| a.1.cmp(b.1).reverse());
+// let mut result_vecs: Vec<String> = vec![];
 
 #[cfg(test)]
 mod tests {
@@ -38,11 +61,12 @@ mod tests {
 
     #[test]
     fn test_likely_xor() {
-        let orig_string = b"HE EVEN SET";
+        let orig_string = b"He EVEN SET";
         let xor_byte = 55u8;
         let xor_array = vec![xor_byte; orig_string.len()];
         let encrypted_bytes = bit_ops::xor_bytes(xor_array, orig_string.to_vec()).unwrap();
-        let potential_strings = get_likely_xor_byte(&encrypted_bytes, 1, true);
-        assert_eq!(potential_strings[0], String::from("HE EVEN SET"));
+        let potential_strings = get_likely_xor_byte(&encrypted_bytes);
+        assert_eq!(potential_strings.plaintext, String::from("He EVEN SET"));
+        assert_eq!(potential_strings.xor_byte, xor_byte);
     }
 }

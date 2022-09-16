@@ -1,3 +1,4 @@
+mod cryptanalysis;
 mod utils;
 
 use clap::{Args, Parser, Subcommand};
@@ -16,6 +17,8 @@ enum Commands {
     HexToB64(HexString),
     /// Takes in two hex strings of equal length and computes the XOR of them
     XorHexStrings(XorHexStrings),
+    /// Takes in a hex string and shows the result of attempting single-byte xor decrypt
+    SingleByteXorDecrypt(HexString),
 }
 
 #[derive(Args, Clone, Debug)]
@@ -29,6 +32,14 @@ struct XorHexStrings {
     #[clap(value_parser)]
     hex_string_a: Option<String>,
     hex_string_b: Option<String>,
+}
+
+#[derive(Args, Clone, Debug)]
+struct XorDecryptOptions {
+    #[clap(value_parser)]
+    hex_string: Option<String>,
+    depth: Option<u8>,
+    uppercase: Option<bool>,
 }
 
 fn main() {
@@ -52,6 +63,16 @@ fn main() {
                 &utils::bit_ops::xor_bytes(hex_bytes_a, hex_bytes_b).unwrap(),
             );
             println!("Hex Version of XOR operation is: {}", result)
+        }
+        Commands::SingleByteXorDecrypt(input) => {
+            let hex_input = input.to_owned().hex_string.unwrap();
+            let hex_bytes = utils::hex::decode_hex(&hex_input).unwrap();
+            println!("{:?}", hex_bytes);
+            let results = cryptanalysis::get_likely_xor_byte(&hex_bytes);
+            println!("XOR Analysis Result is:");
+            println!("  - Likely XOR Byte: {}", results.xor_byte);
+            println!("  - Result Score: {}", results.score);
+            println!("  - Result Plaintext: {}", results.plaintext);
         }
     }
 }
