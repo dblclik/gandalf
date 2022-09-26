@@ -77,7 +77,10 @@ pub fn get_random(bytes_len: usize) -> RandBytes {
 mod tests {
     use crate::utils::bit_ops::xor_bytes;
 
-    use super::{hex::decode_hex, hex::encode_hex, xcode::urlsafe_base64_encode, *};
+    use super::{
+        bit_ops::hamming_distance, hex::decode_hex, hex::encode_hex, xcode::urlsafe_base64_encode,
+        *,
+    };
     #[test]
     fn test_rand32() {
         let result = get_random_32();
@@ -117,5 +120,16 @@ mod tests {
     }
 
     #[test]
-    fn test_byte_freq() {}
+    fn test_hamming_distance() {
+        let a = b"this is a test";
+        let b = b"wokka wokka!!!";
+        let hd = hamming_distance(a, b);
+        assert_eq!(37, hd.unwrap());
+
+        let hd_err = hamming_distance(b"", b);
+        assert_eq!(
+            bit_ops::BitOpsError::ArrayLengthsNotEqual,
+            hd_err.unwrap_err()
+        );
+    }
 }

@@ -73,6 +73,7 @@ struct XorEncryptOptions {
     input_path: Option<String>,
     private_key: Option<String>,
     repeating: Option<bool>,
+    encrypt: Option<bool>,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -166,8 +167,16 @@ fn main() {
                     .unwrap(),
                 repeating: options.repeating.unwrap(),
             };
-            let ciphertext = xor_cipher.encrypt(&file_contents);
-            println!("{}", utils::hex::encode_hex(&ciphertext));
+            if options.encrypt.unwrap() == true {
+                let ciphertext = xor_cipher.encrypt(&file_contents);
+                println!("{}", utils::hex::encode_hex(&ciphertext));
+            } else {
+                let ciphertext =
+                    utils::hex::decode_hex(String::from_utf8(file_contents).unwrap().as_str())
+                        .unwrap();
+                let plaintext = xor_cipher.decrypt(&ciphertext);
+                println!("{}", String::from_utf8(plaintext).unwrap());
+            }
         }
     }
 }

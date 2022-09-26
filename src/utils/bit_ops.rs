@@ -1,3 +1,4 @@
+use hamming;
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -20,4 +21,11 @@ pub fn xor_bytes(a: Vec<u8>, b: Vec<u8>) -> Result<Vec<u8>, BitOpsError> {
         return Err(BitOpsError::ArrayLengthsNotEqual);
     }
     return Ok(a.iter().zip(b).map(|(x, y)| x ^ y).collect());
+}
+
+pub fn hamming_distance(a: &[u8], b: &[u8]) -> Result<u64, BitOpsError> {
+    if a.len() != b.len() {
+        return Err(BitOpsError::ArrayLengthsNotEqual);
+    }
+    Ok(hamming::distance(a, b))
 }

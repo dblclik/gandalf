@@ -17,7 +17,7 @@ pub fn read_file(input_path: &Path) -> Vec<u8> {
     match file.read_to_string(&mut s) {
         Err(why) => panic!("couldn't read {}: {}", display, why),
         Ok(_) => {
-            println!("read {} bytes from file {}", s.len(), display);
+            // println!("read {} bytes from file {}", s.len(), display);
             return s.as_bytes().to_vec();
         }
     }
