@@ -4,7 +4,6 @@ mod io;
 mod utils;
 
 use clap::{Args, Parser, Subcommand};
-use std::option;
 use std::path::Path;
 use std::str::FromStr;
 
