@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+use std::{collections::HashMap, slice::Chunks};
+
 use crate::utils::bit_ops;
 // use std::collections::HashMap;
 
@@ -39,6 +41,40 @@ pub fn get_likely_xor_byte(input_bytes: &[u8]) -> XorAnalysisOutput {
         }
     }
     max_result
+}
+
+pub fn repeating_key_xor_attack(
+    input_bytes: &[u8],
+    min_size: u64,
+    max_size: u64,
+    averaging_depth: u64,
+    return_results: u64,
+) -> Vec<XorAnalysisOutput> {
+    let most_likely_results: Vec<XorAnalysisOutput> = vec![];
+    if return_results > (max_size - min_size) {
+        panic!("Cannot provide back more results than the number of possibilities evaluated!");
+    }
+
+    let mut key_size_hashmap: HashMap<u64, u64> = HashMap::new();
+    for ks in min_size..(max_size + 1) {
+        let mut bytes_iter = input_bytes.chunks(ks.try_into().unwrap());
+        let mut accumulated_diffs = 0u64;
+        let prev_chunk = bytes_iter.next().unwrap();
+        for _rounds in 0..averaging_depth {
+            let next_chunk = bytes_iter.next();
+            match next_chunk {
+                Some(chunk) => {
+                    let dist = bit_ops::hamming_distance(prev_chunk, chunk).unwrap() / ks;
+                    accumulated_diffs = accumulated_diffs + dist;
+                }
+                None => {
+                    break;
+                }
+            }
+        }
+        key_size_hashmap.insert(ks, accumulated_diffs);
+    }
+    most_likely_results
 }
 
 // handy code for converting a hashmap of counts into a reverse sorted vec
